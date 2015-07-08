@@ -1,16 +1,7 @@
 /*eslint-env node*/
+'use strict';
 
 var path = require('path');
-
-var System = require('jspm/node_modules/systemjs');
-
-var jspm = require('jspm');
-var builder = new jspm.Builder();
-// Temporary hack, as per https://github.com/systemjs/systemjs/issues/533#issuecomment-113525639
-global.System = builder.loader;
-// Execute the IIFE
-global.systemJsRuntime = false;
-require(path.join(__dirname, 'static/src/systemjs-normalize'));
 
 var crypto = require('crypto');
 var fs = require('fs');
@@ -37,12 +28,12 @@ var bundleConfigs = [
     ['bootstraps/profile - core - bootstraps/app', 'profile'],
     ['bootstraps/ophan - core', 'ophan'],
     ['bootstraps/admin - core', 'admin'],
-    // Odd issue when bundling admin with core: https://github.com/jspm/jspm-cli/issues/806
-    // ['bootstraps/admin', 'admin'],
+    // // Odd issue when bundling admin with core: https://github.com/jspm/jspm-cli/issues/806
+    // // ['bootstraps/admin', 'admin'],
     ['bootstraps/video-player - core', 'video-player'],
     ['bootstraps/video-embed - core', 'video-embed'],
-    // Odd issue when bundling admin with core: https://github.com/jspm/jspm-cli/issues/806
-    // ['bootstraps/video-embed', 'video-embed'],
+    // // Odd issue when bundling video-embed with core: https://github.com/jspm/jspm-cli/issues/806
+    // // ['bootstraps/video-embed', 'video-embed'],
     ['bootstraps/dev - core - bootstraps/app', 'dev'],
     ['bootstraps/creatives - core - bootstraps/app', 'creatives'],
     ['zxcvbn', 'zxcvbn']
@@ -54,23 +45,49 @@ var getHash = function (outputSource) {
         .digest('hex');
 };
 
+var spawned = [];
 var createBundle = function (bundleConfig) {
-    var moduleExpression = bundleConfig[0];
-    var outName = bundleConfig[1];
-    return builder.build(moduleExpression, null, {
-            minify: true,
-            sourceMaps: true,
-            sourceMapContents: true })
-        // Attach URI
-        .then(function (output) {
-            var hash = getHash(output.source);
-            // The id is the first part of the arithmetic expression, the string up to the first space character.
-            output.id = /^[^\s]*/.exec(moduleExpression)[0];
-            // Relative to jspm client base URL
-            output.uri = path.join(bundlesUri, outName, hash, outName + '.js');
-            return output;
+    return new Promise(function (resolve, reject) {
+        var spawn = require('child_process').spawn;
+
+        var moduleExpression = bundleConfig[0];
+        var outName = bundleConfig[1];
+        var bundleProcess = spawn('node', ['create-bundle', moduleExpression]);
+        spawned.push(bundleProcess);
+
+        // Warning: reassignment and mutation!
+        var rawOutput = '', rawError = '';
+        bundleProcess.stdout.on('data', function (data) {
+            rawOutput += data.toString();
         });
+
+        bundleProcess.stderr.on('data', function (data) {
+            rawError += data.toString();
+        });
+
+        bundleProcess.on('close', function () {
+            if (rawError) {
+                reject(rawError);
+            } else {
+                console.log('close', moduleExpression);
+                var output = JSON.parse(rawOutput);
+                var hash = getHash(output.source);
+                // The id is the first part of the arithmetic expression, the string up to the first space character.
+                output.id = /^[^\s]*/.exec(moduleExpression)[0];
+                // Relative to jspm client base URL
+                output.uri = path.join(bundlesUri, outName, hash, outName + '.js');
+                resolve(output);
+            }
+        });
+    });
 };
+
+// make sure all child processes are killed when grunt exits
+process.on('exit', function () {
+    spawned.forEach(function (el) {
+        el.kill('SIGKILL');
+    });
+});
 
 var writeBundlesToDisk = function (bundles) {
     bundles.forEach(function (bundle) {
@@ -97,11 +114,12 @@ var writeBundlesConfig = function (bundles) {
     fs.writeFileSync(configFilePath, configFileData);
 };
 
-Promise.all(bundleConfigs.map(createBundle))
+var throat = require('throat');
+Promise.all(bundleConfigs.map(throat(24, createBundle)))
     .then(function (bundles) {
         writeBundlesToDisk(bundles);
         writeBundlesConfig(bundles);
     })
     .catch(function (error) {
-        console.error(error.stack);
+        console.error(error);
     });
