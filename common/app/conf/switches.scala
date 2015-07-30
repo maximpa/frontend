@@ -943,15 +943,6 @@ object Switches {
     exposeClientSide = true
   )
 
-  val ABLiveblogNotifications = Switch(
-    "A/B Tests",
-    "ab-liveblog-notifications",
-    "Liveblog notifications",
-    safeState = Off,
-    sellByDate = new LocalDate(2015, 8, 1),
-    exposeClientSide = true
-  )
-
   val ABHighCommercialComponent = Switch(
     "A/B Tests",
     "ab-high-commercial-component",
