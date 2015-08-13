@@ -517,11 +517,12 @@ $avatarPadding: $gs-gutter / 2;
     margin-left: 0;
 }
 
-.i-reply-grey {
-    margin-bottom: -4px;
+.inline-reply-grey {
     display: inline-block;
+    position: relative;
+    top: 4px;
 }
-.d-comment-box--top-level .i-reply-grey {
+.d-comment-box--top-level .inline-reply-grey {
     display: none;
 }
 
@@ -832,7 +833,7 @@ $comment-recommend-button-size: 19px;
     }
 
     .i {
-        margin-top: -1px;
+        margin-top: 4px;
         vertical-align: middle;
         margin-right: 2px;
     }

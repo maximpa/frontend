@@ -23,6 +23,8 @@ define([
     'inlineSvg!svgs/icon/comment-light-grey',
     'inlineSvg!svgs/icon/comment-light-pink',
     'inlineSvg!svgs/icon/comment-light-blue',
+    'inlineSvg!svgs/icon/reply-blue',
+    'inlineSvg!svgs/icon/reply-grey',
     'inlineSvg!svgs/notifications-explainer-mobile',
     'inlineSvg!svgs/notifications-explainer-desktop'
 ], function (
@@ -46,6 +48,8 @@ define([
     commentLightGrey,
     commentLightPink,
     commentLightBlue,
+    replyBlue,
+    replyGrey,
     notificationsExplainerMobile,
     notificationsExplainerDesktop
 ) {
@@ -69,6 +73,8 @@ define([
         commentLightGrey: commentLightGrey,
         commentLightPink: commentLightPink,
         commentLightBlue: commentLightBlue,
+        replyBlue: replyBlue,
+        replyGrey: replyGrey,
         notificationsExplainerMobile: notificationsExplainerMobile,
         notificationsExplainerDesktop: notificationsExplainerDesktop
     };
