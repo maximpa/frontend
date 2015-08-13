@@ -21,6 +21,10 @@
                 @Format(comment.date, "d MMM y")
             </time>
         </div>
-        @if(showMore){<a href="#comments" data-link-name="CTA Top comment bottom read more" class="comments-link tone-colour">See more comments<i class="i i-comment-light-grey"></i></a>}
+        @if(showMore){
+            <a href="#comments" data-link-name="CTA Top comment bottom read more" class="comments-link tone-colour">    See more comments
+                @fragments.inlineSvg("comment-light-grey", "icon")
+            </a>
+        }
     </div>
 </div>

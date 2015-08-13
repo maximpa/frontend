@@ -20,6 +20,9 @@ define([
     'inlineSvg!svgs/icon/arrow-right',
     'inlineSvg!svgs/icon/bookmark',
     'inlineSvg!svgs/icon/comment-anchor',
+    'inlineSvg!svgs/icon/comment-light-grey',
+    'inlineSvg!svgs/icon/comment-light-pink',
+    'inlineSvg!svgs/icon/comment-light-blue',
     'inlineSvg!svgs/notifications-explainer-mobile',
     'inlineSvg!svgs/notifications-explainer-desktop'
 ], function (
@@ -40,6 +43,9 @@ define([
     arrowRight,
     bookmark,
     commentAnchor,
+    commentLightGrey,
+    commentLightPink,
+    commentLightBlue,
     notificationsExplainerMobile,
     notificationsExplainerDesktop
 ) {
@@ -60,6 +66,9 @@ define([
         arrowRight: arrowRight,
         bookmark: bookmark,
         commentAnchor: commentAnchor,
+        commentLightGrey: commentLightGrey,
+        commentLightPink: commentLightPink,
+        commentLightBlue: commentLightBlue,
         notificationsExplainerMobile: notificationsExplainerMobile,
         notificationsExplainerDesktop: notificationsExplainerDesktop
     };
