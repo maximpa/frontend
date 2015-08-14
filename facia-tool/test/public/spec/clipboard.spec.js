@@ -1,28 +1,40 @@
 import ko from 'knockout';
 import _ from 'underscore';
 import $ from 'jquery';
-import mockjax from 'test/utils/mockjax';
 import * as cache from 'modules/cache';
+import Droppable from 'modules/droppable';
 import * as vars from 'modules/vars';
-import newItems from 'models/collections/new-items';
 import * as widgets from 'models/widgets';
-import listManager from 'modules/list-manager';
 import mediator from 'utils/mediator';
+import * as mockjax from 'test/utils/mockjax';
+import textInside from 'test/utils/text-inside';
+import inject from 'test/utils/inject';
 
 // Store the original settimeout
-var yeld = setTimeout;
+var yeld = setTimeout, injectedClipboard;
 
 describe('Clipboard', function () {
-    beforeAll(function () {
-        setUpTests();
-    });
     beforeEach(function () {
+        window.localStorage.clear();
+        this.droppable = new Droppable();
+        widgets.register();
+        cache.put('contentApi', 'internal-code/page/first', {
+            'webUrl': 'http://theguardian.com/banana',
+            'fields': {
+                'headline': 'Bananas are yellow'
+            }
+        });
+        this.scope = mockjax.scope();
+        this.scope({
+            url: '/api/proxy/piuccio*',
+            responseText: {}
+        });
         jasmine.clock().install();
     });
-    afterAll(function () {
-        clearTests();
-    });
     afterEach(function () {
+        this.scope.clear();
+        this.droppable.dispose();
+        injectedClipboard.dispose();
         jasmine.clock().uninstall();
     });
 
@@ -93,40 +105,31 @@ describe('Clipboard', function () {
     });
 });
 
-var container;
 function injectClipboard (callback) {
-    if (container) {
-        ko.cleanNode(container[0]);
-        container.remove();
+    if (injectedClipboard) {
+        injectedClipboard.dispose();
         jasmine.clock().tick(10);
     }
 
-    container = $([
-        '<div>',
-            '<clipboard-widget params="position: 0, column: $data"></clipboard-widget>',
-        '</div>',
-        '<script type="text/html" id="template_article">',
-            '<div class="article" data-bind="text: headline"></div>',
-        '</script>'
-    ].join('')).appendTo(document.body);
+    injectedClipboard = inject(`
+        <clipboard-widget params="position: 0, column: $data"></clipboard-widget>
+    `);
+    injectedClipboard.apply({
+        switches: ko.observable({
+            'facia-tool-sparklines': false
+        }),
+        identity: { email: 'fabio.crisci@theguardian.com' },
+        isPasteActive: ko.observable()
+    }, true).then(callback);
 
-    mediator.once('clipboard:loaded', function (clipboard) {
-        yeld(function () {
-            callback(clipboard);
-        }, 10);
-    });
-
-    ko.applyBindings({
-        isPasteActive: false
-    }, container[0]);
     jasmine.clock().tick(10);
 }
 
 function getArticles () {
     var articles = [];
-    $('.article').each(function (i, elem) {
+    $('trail-widget').each(function (i, elem) {
         articles.push({
-            headline: $(elem).text().trim(),
+            headline: textInside($(elem).find('.element__headline')),
             dom: $(elem)
         });
     });
@@ -134,9 +137,10 @@ function getArticles () {
 }
 
 function dragArticle (article, clipboard, callback) {
-    clipboard.group.drop({
+    mediator.emit('drop', {
         sourceItem: article,
-    }, clipboard.group);
+        sourceGroup: null
+    }, clipboard.group, clipboard.group);
     // Let knockout refresh the HTML
     yeld(function () {
         jasmine.clock().tick(vars.CONST.detectPendingChangesInClipboard);
@@ -159,35 +163,4 @@ function changeHeadline (position, newHeadline, clipboard) {
     var article = clipboard.group.items()[position];
     article.meta.headline(newHeadline);
     jasmine.clock().tick(vars.CONST.detectPendingChangesInClipboard);
-}
-
-var mockjaxId;
-function setUpTests () {
-    window.localStorage.clear();
-    widgets.register();
-    listManager.init(newItems);
-    cache.put('contentApi', 'internal-code/page/first', {
-        'webUrl': 'http://theguardian.com/banana',
-        'fields': {
-            'headline': 'Bananas are yellow'
-        }
-    });
-    if (!vars.model) {
-        vars.setModel({
-            switches: ko.observable({
-                'facia-tool-sparklines': false
-            })
-        });
-    }
-    mockjaxId = mockjax({
-        url: '/api/proxy/piuccio*',
-        responseText: {}
-    });
-}
-
-function clearTests () {
-    listManager.reset();
-    ko.cleanNode(container[0]);
-    container.remove();
-    mockjax.clear(mockjaxId);
 }
